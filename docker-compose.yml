@@ -1,0 +1,38 @@
+services:
+  # 1. Container PHP/Laravel
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Tanda ':z' di akhir sangat penting untuk Fedora (SELinux) agar bisa membaca file
+      - ./:/var/www/html:z
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  # 2. Container MySQL
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: invent_app_resto
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db_data:/var/lib/mysql:z
+    ports:
+      - "3306:3306"
+
+  # 3. Container Node.js (Untuk NPM / Vite / Frontend tooling)
+  node:
+    image: node:20
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html:z
+    ports:
+      - "5173:5173" # Port default Vite
+    # Biarkan standby agar bisa dieksekusi manual, atau ganti dengan "npm run dev" jika sudah ada package.json
+    command: tail -f /dev/null 
+
+volumes:
+  db_data: # Volume persisten agar data database tidak hilang saat container mati

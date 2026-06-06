@@ -1,12 +1,20 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import StatCard from '@/Components/StatCard.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import { ArrowDownTrayIcon, ArrowUpTrayIcon, DocumentTextIcon, ArrowPathIcon } from '@heroicons/vue/24/outline';
+import {
+    ArrowDownTrayIcon,
+    ArrowUpTrayIcon,
+    DocumentTextIcon,
+    ArrowPathIcon,
+    DocumentArrowDownIcon,
+    TableCellsIcon,
+    FunnelIcon,
+} from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     stats: Object,
@@ -14,27 +22,52 @@ const props = defineProps({
     filters: Object,
 });
 
-const filterType = ref(props.filters.type || '');
+const filterType     = ref(props.filters.type      || '');
 const filterDateFrom = ref(props.filters.date_from || '');
-const filterDateTo = ref(props.filters.date_to || '');
+const filterDateTo   = ref(props.filters.date_to   || '');
 
 const applyFilters = () => {
     router.get(
         route('reports.index'),
-        { 
-            type: filterType.value,
+        {
+            type:      filterType.value,
             date_from: filterDateFrom.value,
-            date_to: filterDateTo.value,
+            date_to:   filterDateTo.value,
         },
         { preserveState: true, replace: true }
     );
 };
 
 const resetFilters = () => {
-    filterType.value = '';
+    filterType.value     = '';
     filterDateFrom.value = '';
-    filterDateTo.value = '';
+    filterDateTo.value   = '';
     router.get(route('reports.index'), {}, { preserveState: true, replace: true });
+};
+
+/* ── Export ────────────────────────────────────────────────── */
+const exportLoading = ref('');
+
+const buildExportUrl = (format) => {
+    const params = new URLSearchParams();
+    if (filterType.value)     params.append('type',      filterType.value);
+    if (filterDateFrom.value) params.append('date_from', filterDateFrom.value);
+    if (filterDateTo.value)   params.append('date_to',   filterDateTo.value);
+    const qs = params.toString();
+    return route('reports.export', { format }) + (qs ? '?' + qs : '');
+};
+
+const doExport = (format) => {
+    exportLoading.value = format;
+    const url = buildExportUrl(format);
+    // Trigger browser download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => { exportLoading.value = ''; }, 2000);
 };
 </script>
 
@@ -43,9 +76,47 @@ const resetFilters = () => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                Laporan Transaksi
-            </h2>
+            <div class="flex items-center justify-between w-full">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                    Laporan Transaksi
+                </h2>
+
+                <!-- Export Buttons -->
+                <div class="flex items-center gap-2">
+                    <!-- PDF -->
+                    <button
+                        @click="doExport('pdf')"
+                        :disabled="exportLoading === 'pdf'"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 transition-colors duration-200 disabled:opacity-60"
+                    >
+                        <DocumentArrowDownIcon class="h-4 w-4" aria-hidden="true" />
+                        {{ exportLoading === 'pdf' ? '...' : 'PDF' }}
+                    </button>
+
+                    <!-- CSV -->
+                    <button
+                        @click="doExport('csv')"
+                        :disabled="exportLoading === 'csv'"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-colors duration-200 disabled:opacity-60"
+                    >
+                        <DocumentTextIcon class="h-4 w-4" aria-hidden="true" />
+                        {{ exportLoading === 'csv' ? '...' : 'CSV' }}
+                    </button>
+
+                    <!-- XLSX -->
+                    <button
+                        @click="doExport('xlsx')"
+                        :disabled="exportLoading === 'xlsx'"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 rounded-md bg-cyan-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 transition-colors duration-200 disabled:opacity-60"
+                    >
+                        <TableCellsIcon class="h-4 w-4" aria-hidden="true" />
+                        {{ exportLoading === 'xlsx' ? '...' : 'Excel' }}
+                    </button>
+                </div>
+            </div>
         </template>
 
         <div class="space-y-6">
@@ -145,7 +216,11 @@ const resetFilters = () => {
                                     Tidak ada data laporan yang ditemukan pada periode ini.
                                 </td>
                             </tr>
-                            <tr v-for="(txn, index) in transactions.data" :key="txn.id" class="hover:bg-gray-50 transition-colors duration-150">
+                            <tr
+                                v-for="(txn, index) in transactions.data"
+                                :key="txn.id"
+                                class="hover:bg-gray-50 transition-colors duration-150"
+                            >
                                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
                                     {{ (transactions.current_page - 1) * transactions.per_page + index + 1 }}
                                 </td>

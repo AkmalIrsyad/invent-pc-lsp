@@ -30,6 +30,7 @@ export default defineConfig({
                 theme_color: '#0891b2', // cyan-600
                 background_color: '#ffffff',
                 display: 'standalone',
+                start_url: '/',
                 icons: [
                     {
                         src: '/pwa-192x192.png',

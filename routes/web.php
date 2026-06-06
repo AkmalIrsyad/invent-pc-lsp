@@ -29,6 +29,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Laporan
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export/{format}', [ReportController::class, 'export'])->name('reports.export');
+
 
     // Profile (Breeze default)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

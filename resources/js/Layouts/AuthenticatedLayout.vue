@@ -192,9 +192,9 @@ watch(flash, () => {
                     </button>
                     <div class="flex flex-1 justify-between px-4">
                         <div class="flex flex-1 items-center">
-                            <h1 v-if="$slots.header" class="text-xl font-semibold text-gray-900 sm:text-2xl">
+                            <div v-if="$slots.header" class="w-full flex items-center">
                                 <slot name="header" />
-                            </h1>
+                            </div>
                         </div>
                         <div class="ml-4 flex items-center md:ml-6">
                             <!-- Profile dropdown -->
